@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import '@fontsource/pt-sans';
+import Picker from 'emoji-picker-react';
+import { ReactComponent as Bubble } from '../assets/bubble-left.svg';
+import { ReactComponent as Close } from '../assets/close.svg';
+import { ReactComponent as Smile } from '../assets/smile.svg';
 
 const ChatWrapper = styled.div`
   font-family: 'Roboto';
@@ -10,6 +14,13 @@ const ChatWrapper = styled.div`
   display: flex;
   flex-flow: column;
   align-items: flex-end;
+  @media (max-width: 410px) {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    right: unset;
+    bottom: unset;
+  }
 `;
 const ToggleButton = styled.button`
   border-radius: 100%;
@@ -20,6 +31,12 @@ const ToggleButton = styled.button`
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   margin-top: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  bottom: 15px;
+  right: 15px;
 `;
 // @TODO: 750px
 const ChatDialog = styled.div`
@@ -29,10 +46,24 @@ const ChatDialog = styled.div`
   box-shadow: 0px 8px 16px rgba(51, 51, 51, 0.2);
   border-radius: 4px;
   width: 100%;
-  max-height: 80vh;
+  max-height: 760px;
   min-height: 10vh;
   border-top: 5px solid #0848c0;
   padding: 16px;
+  z-index: 99;
+  @media (max-width: 410px) {
+    max-width: unset;
+    width: 100%;
+    min-width: unset;
+    min-height: unset;
+    max-height: unset;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+  }
 `;
 const ChatDesc = styled.div``;
 const ChatTitle = styled.h2`
@@ -78,10 +109,42 @@ const ChatRubrica = styled.button`
   padding-top: 17px;
   padding-bottom: 13px;
   cursor: pointer;
+  &:hover {
+    background: rgba(8, 72, 192, 0.12);
+  }
 `;
-const ChatBody = styled.div``;
+const ChatBody = styled.div`
+  overflow-y: scroll;
+  height: 410px;
+  display: flex;
+  flex-direction: column;
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #d6dade;
+    border-radius: 20px;
+    border-left: 6px solid transparent;
+  }
+  @media (max-width: 410px) {
+    flex: 1;
+  }
+`;
 const ChatFooter = styled.div`
-  margin-top: 24px;
+  margin-top: 6px;
+  position: relative;
+`;
+const SmileButton = styled(Smile)`
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 10px;
+  z-index: 9;
+  margin: auto 0;
+  cursor: pointer;
 `;
 const ChatTime = styled.span`
   font-family: 'PT Sans';
@@ -91,7 +154,7 @@ const ChatTime = styled.span`
   line-height: 17px;
   text-align: center;
   color: #9ea4ac;
-  padding: 29px 0 26px;
+  padding: 29px 0 10px;
   display: block;
 `;
 const ChatFrom = styled.div`
@@ -133,41 +196,82 @@ const Time = styled.span`
   text-align: right;
   display: block;
 `;
+const EmojiWrap = styled.div`
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: #fff;
+  width: 40%;
+  height: 100px;
+  box-shadow: 0px 0px 1px 1px #d6dade;
+  border-radius: 2px;
+`;
+const MobileClose = styled.button`
+  background: rgba(51, 51, 51, 0.4);
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  top: 9px;
+  right: 9px;
+  width: 40px;
+  height: 40px;
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
 export default function Chat() {
+  const [visible, setVisible] = useState(false);
+  const [emojiVisible, setEmojiVisible] = useState(false);
+  const [chosenEmoji, setChosenEmoji] = useState(null);
+
+  const onEmojiClick = () => {
+    setEmojiVisible((visiemojiVisibleble) => !emojiVisible);
+  };
   return (
     <ChatWrapper>
-      <ChatDialog>
-        <ChatBody>
-          <ChatDesc>
-            <ChatTitle>Здравствуйте</ChatTitle>
-            <ChatText>
-              Сотрудники службы поддержки mos.ru ответят на вопросы о работе портала, окажут помощь в получении госуслуг
-              и поиске информации
-            </ChatText>
-            <ChatRubrics>
-              <ChatRubrica>Центры госуслуг «Мои документы»</ChatRubrica>
-              <ChatRubrica>Вопросы по Личному кабинету</ChatRubrica>
-              <ChatRubrica>Молочная кухня</ChatRubrica>
-              <ChatRubrica>Карта Москвича</ChatRubrica>
-              <ChatRubrica>Найти ответ в базе знаний</ChatRubrica>
-            </ChatRubrics>
-          </ChatDesc>
-          <ChatTime>Несколько часов назад</ChatTime>
-          <ChatFrom>
-            Уточнить перечень предоставляемых услуг и их наличие в центре госуслуг «Мои документы» можно по ссылке:
-            https://md.mos.ru/katalog-uslug/perechen-uslug Узнать адреса центров госуслуг города Москвы:
-            https://md.mos.ru/find-your-dcp/structure
-            <Time>01:46</Time>
-          </ChatFrom>
-          <ChatTo>
-            Ну здорова отец.<Time>01:47</Time>
-          </ChatTo>
-        </ChatBody>
-        <ChatFooter>
-          <ChatInput type="text" placeholder="Введите сообщение..." />
-        </ChatFooter>
-      </ChatDialog>
-      <ToggleButton></ToggleButton>
+      {visible && (
+        <ChatDialog>
+          <MobileClose onClick={() => setVisible((visible) => !visible)}>
+            <Close width="14" height="14" />
+          </MobileClose>
+          <ChatBody>
+            <ChatDesc>
+              <ChatTitle>Здравствуйте</ChatTitle>
+              <ChatText>
+                Сотрудники службы поддержки mos.ru ответят на вопросы о работе портала, окажут помощь в получении
+                госуслуг и поиске информации
+              </ChatText>
+              <ChatRubrics>
+                <ChatRubrica>Центры госуслуг «Мои документы»</ChatRubrica>
+                <ChatRubrica>Вопросы по Личному кабинету</ChatRubrica>
+                <ChatRubrica>Молочная кухня</ChatRubrica>
+                <ChatRubrica>Карта Москвича</ChatRubrica>
+                <ChatRubrica>Найти ответ в базе знаний</ChatRubrica>
+              </ChatRubrics>
+            </ChatDesc>
+            <ChatTime>Несколько часов назад</ChatTime>
+            <ChatFrom>
+              Уточнить перечень предоставляемых услуг и их наличие в центре госуслуг «Мои документы» можно по ссылке:
+              https://md.mos.ru/katalog-uslug/perechen-uslug Узнать адреса центров госуслуг города Москвы:
+              https://md.mos.ru/find-your-dcp/structure
+              <Time>01:46</Time>
+            </ChatFrom>
+            <ChatTo>
+              Ну здорова отец.<Time>01:47</Time>
+            </ChatTo>
+          </ChatBody>
+          <ChatFooter>
+            {emojiVisible && (
+              <EmojiWrap>
+                <Picker onEmojiClick={onEmojiClick} />
+              </EmojiWrap>
+            )}
+            <SmileButton onClick={() => setEmojiVisible((emojiVisible) => !emojiVisible)} />
+            <ChatInput type="text" placeholder="Введите сообщение..." />
+          </ChatFooter>
+        </ChatDialog>
+      )}
+      <ToggleButton onClick={() => setVisible((visible) => !visible)}>{visible ? <Close /> : <Bubble />}</ToggleButton>
     </ChatWrapper>
   );
 }

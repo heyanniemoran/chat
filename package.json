@@ -16,6 +16,7 @@
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
     "css-resetter": "^1.2.3",
+    "emoji-picker-react": "^3.6.1",
     "prettier": "^2.7.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -51,6 +52,7 @@
   },
   "devDependencies": {
     "@svgr/cli": "^6.3.1",
+    "@svgr/core": "^6.3.1",
     "@types/styled-components": "^5.1.26",
     "@web-bee-ru/eslint-plugin": "^0.6.3"
   }
