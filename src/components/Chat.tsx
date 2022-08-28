@@ -1,10 +1,21 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
+import React, { useMemo, useState, useCallback } from 'react';
+import styled, { keyframes } from 'styled-components';
 import '@fontsource/pt-sans';
 import Picker from 'emoji-picker-react';
-import { ReactComponent as Bubble } from '../assets/bubble-left.svg';
 import { ReactComponent as Close } from '../assets/close.svg';
 import { ReactComponent as Smile } from '../assets/smile.svg';
+import TextareaAutosize from 'react-textarea-autosize';
+
+const show = keyframes`
+  from {
+    opacity: 0;
+    bottom: 0;
+  }
+  to {
+    opacity: 100%;
+    bottom: 15px;
+  }
+`;
 
 const ChatWrapper = styled.div`
   font-family: 'Roboto';
@@ -14,6 +25,7 @@ const ChatWrapper = styled.div`
   display: flex;
   flex-flow: column;
   align-items: flex-end;
+  animation: ${show} 1s linear;
   @media (max-width: 410px) {
     position: relative;
     width: 100vw;
@@ -34,9 +46,19 @@ const ToggleButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  position: fixed;
-  bottom: 15px;
-  right: 15px;
+  position: relative;
+  //@media (max-width: 410px) {
+  //  position: fixed;
+  //  bottom: 15px;
+  //  right: 15px;
+  //}
+  &:before {
+    content: '';
+    width: 58px;
+    height: 58px;
+    left: 0;
+    top: 0;
+  }
 `;
 // @TODO: 750px
 const ChatDialog = styled.div`
@@ -81,9 +103,9 @@ const ChatText = styled.p`
   line-height: 22px;
   margin-top: 8px;
 `;
-const ChatInput = styled.input`
+const ChatTextarea = styled(TextareaAutosize)`
   font-size: 14px;
-  line-height: 49px;
+  line-height: 1.4;
   background: #ffffff;
   box-shadow: 0px 0px 1px 1px #d6dade;
   border-radius: 2px;
@@ -196,6 +218,138 @@ const Time = styled.span`
   text-align: right;
   display: block;
 `;
+
+export default function Chat() {
+  const [visible, setVisible] = useState(false);
+  const [emojiVisible, setEmojiVisible] = useState(false);
+  const [chosenEmoji, setChosenEmoji] = useState(null);
+
+  interface Message {
+    id: number;
+    text: string;
+    time: string;
+    my: boolean;
+  }
+  const [messages, setMessages] = useState((): Message[] => {
+    return [
+      {
+        id: 1,
+        text:
+          'Уточнить перечень предоставляемых услуг и их наличие в центре госуслуг «Мои документы» можно по ссылке:\n' +
+          'https://md.mos.ru/katalog-uslug/perechen-uslug Узнать адреса центров госуслуг города Москвы:\n' +
+          'https://md.mos.ru/find-your-dcp/structure',
+        time: '01:46',
+        my: false,
+      },
+      {
+        id: 2,
+        text: 'Ну здорова отец.',
+        time: '01:47',
+        my: true,
+      },
+    ];
+  });
+
+  const [nextId, setNextId] = useState(100);
+  const getNextId = useCallback(() => {
+    setNextId((current) => current + 1);
+    return nextId;
+  }, [nextId]);
+
+  const [text, setText] = useState('');
+  const send = useCallback(() => {
+    const now = new Date();
+    setMessages((current) => {
+      const copy = current.slice();
+      copy.push({
+        id: getNextId(),
+        text: text,
+        time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
+        my: true,
+      });
+      return copy;
+    });
+    setText('');
+  }, [text]);
+  const handleKeyPress = useCallback(
+    (ev: React.KeyboardEvent) => {
+      if (ev.ctrlKey && ev.code === 'Enter') {
+        ev.preventDefault();
+        send();
+      }
+    },
+    [send],
+  );
+
+  const onEmojiClick = () => {
+    setEmojiVisible((visiemojiVisibleble) => !emojiVisible);
+  };
+  return (
+    <>
+      <ChatWrapper>
+        {visible && (
+          <ChatDialog>
+            <MobileClose onClick={() => setVisible((visible) => !visible)}>
+              <Close width="14" height="14" />
+            </MobileClose>
+            <ChatBody>
+              <ChatDesc>
+                <ChatTitle>Здравствуйте</ChatTitle>
+                <ChatText>
+                  Сотрудники службы поддержки mos.ru ответят на вопросы о работе портала, окажут помощь в получении
+                  госуслуг и поиске информации
+                </ChatText>
+                <ChatRubrics>
+                  <ChatRubrica>Центры госуслуг «Мои документы»</ChatRubrica>
+                  <ChatRubrica>Вопросы по Личному кабинету</ChatRubrica>
+                  <ChatRubrica>Молочная кухня</ChatRubrica>
+                  <ChatRubrica>Карта Москвича</ChatRubrica>
+                  <ChatRubrica>Найти ответ в базе знаний</ChatRubrica>
+                </ChatRubrics>
+              </ChatDesc>
+              <ChatTime>Несколько часов назад</ChatTime>
+              {messages.map((message) => (
+                <React.Fragment key={message.id}>
+                  {message.my ? (
+                    <ChatTo>
+                      {message.text}
+                      <Time>{message.time}</Time>
+                    </ChatTo>
+                  ) : (
+                    <ChatFrom>
+                      {message.text}
+                      <Time>{message.time}</Time>
+                    </ChatFrom>
+                  )}
+                </React.Fragment>
+              ))}
+            </ChatBody>
+            <ChatFooter>
+              {emojiVisible && (
+                <EmojiWrap>
+                  <Picker onEmojiClick={onEmojiClick} />
+                </EmojiWrap>
+              )}
+              <SmileButton onClick={() => setEmojiVisible((emojiVisible) => !emojiVisible)} />
+              <ChatTextarea
+                value={text}
+                maxRows={3}
+                minRows={1}
+                onKeyPress={handleKeyPress}
+                onChange={(ev) => setText(ev.currentTarget.value)}
+                placeholder="Введите сообщение..."
+              />
+              {text.length > 0 && <span onClick={send}>&gt;</span>}
+            </ChatFooter>
+          </ChatDialog>
+        )}
+        <ToggleButton onClick={() => setVisible((visible) => !visible)}>
+          {visible ? <Close /> : <div></div>}
+        </ToggleButton>
+      </ChatWrapper>
+    </>
+  );
+}
 const EmojiWrap = styled.div`
   position: absolute;
   bottom: calc(100% + 6px);
@@ -218,60 +372,7 @@ const MobileClose = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  @media (min-width: 410px) {
+    display: none;
+  }
 `;
-export default function Chat() {
-  const [visible, setVisible] = useState(false);
-  const [emojiVisible, setEmojiVisible] = useState(false);
-  const [chosenEmoji, setChosenEmoji] = useState(null);
-
-  const onEmojiClick = () => {
-    setEmojiVisible((visiemojiVisibleble) => !emojiVisible);
-  };
-  return (
-    <ChatWrapper>
-      {visible && (
-        <ChatDialog>
-          <MobileClose onClick={() => setVisible((visible) => !visible)}>
-            <Close width="14" height="14" />
-          </MobileClose>
-          <ChatBody>
-            <ChatDesc>
-              <ChatTitle>Здравствуйте</ChatTitle>
-              <ChatText>
-                Сотрудники службы поддержки mos.ru ответят на вопросы о работе портала, окажут помощь в получении
-                госуслуг и поиске информации
-              </ChatText>
-              <ChatRubrics>
-                <ChatRubrica>Центры госуслуг «Мои документы»</ChatRubrica>
-                <ChatRubrica>Вопросы по Личному кабинету</ChatRubrica>
-                <ChatRubrica>Молочная кухня</ChatRubrica>
-                <ChatRubrica>Карта Москвича</ChatRubrica>
-                <ChatRubrica>Найти ответ в базе знаний</ChatRubrica>
-              </ChatRubrics>
-            </ChatDesc>
-            <ChatTime>Несколько часов назад</ChatTime>
-            <ChatFrom>
-              Уточнить перечень предоставляемых услуг и их наличие в центре госуслуг «Мои документы» можно по ссылке:
-              https://md.mos.ru/katalog-uslug/perechen-uslug Узнать адреса центров госуслуг города Москвы:
-              https://md.mos.ru/find-your-dcp/structure
-              <Time>01:46</Time>
-            </ChatFrom>
-            <ChatTo>
-              Ну здорова отец.<Time>01:47</Time>
-            </ChatTo>
-          </ChatBody>
-          <ChatFooter>
-            {emojiVisible && (
-              <EmojiWrap>
-                <Picker onEmojiClick={onEmojiClick} />
-              </EmojiWrap>
-            )}
-            <SmileButton onClick={() => setEmojiVisible((emojiVisible) => !emojiVisible)} />
-            <ChatInput type="text" placeholder="Введите сообщение..." />
-          </ChatFooter>
-        </ChatDialog>
-      )}
-      <ToggleButton onClick={() => setVisible((visible) => !visible)}>{visible ? <Close /> : <Bubble />}</ToggleButton>
-    </ChatWrapper>
-  );
-}
