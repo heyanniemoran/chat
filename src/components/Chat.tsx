@@ -1,10 +1,12 @@
 import React, { useMemo, useState, useCallback } from 'react';
+import { encode } from 'html-entities';
 import styled, { keyframes } from 'styled-components';
 import '@fontsource/pt-sans';
-import Picker from 'emoji-picker-react';
 import { ReactComponent as Close } from '../assets/close.svg';
 import { ReactComponent as Smile } from '../assets/smile.svg';
+import { ReactComponent as Send } from '../assets/send.svg';
 import TextareaAutosize from 'react-textarea-autosize';
+import Emoji from './Emoji';
 
 const show = keyframes`
   from {
@@ -47,11 +49,6 @@ const ToggleButton = styled.button`
   align-items: center;
   justify-content: center;
   position: relative;
-  //@media (max-width: 410px) {
-  //  position: fixed;
-  //  bottom: 15px;
-  //  right: 15px;
-  //}
   &:before {
     content: '';
     width: 58px;
@@ -60,7 +57,6 @@ const ToggleButton = styled.button`
     top: 0;
   }
 `;
-// @TODO: 750px
 const ChatDialog = styled.div`
   max-width: 410px;
   min-width: 390px;
@@ -68,7 +64,7 @@ const ChatDialog = styled.div`
   box-shadow: 0px 8px 16px rgba(51, 51, 51, 0.2);
   border-radius: 4px;
   width: 100%;
-  max-height: 760px;
+  max-height: 750px;
   min-height: 10vh;
   border-top: 5px solid #0848c0;
   padding: 16px;
@@ -110,8 +106,18 @@ const ChatTextarea = styled(TextareaAutosize)`
   box-shadow: 0px 0px 1px 1px #d6dade;
   border-radius: 2px;
   width: 100%;
-  padding-left: 38px;
+  padding: 10px 38px;
   cursor: text;
+  &::-webkit-scrollbar {
+    width: 0;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-left: 0;
+  }
 `;
 const ChatRubrics = styled.div`
   display: flex;
@@ -161,11 +167,9 @@ const ChatFooter = styled.div`
 `;
 const SmileButton = styled(Smile)`
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 10px;
   left: 10px;
   z-index: 9;
-  margin: auto 0;
   cursor: pointer;
 `;
 const ChatTime = styled.span`
@@ -219,6 +223,15 @@ const Time = styled.span`
   display: block;
 `;
 
+const SendButton = styled(Send)`
+  position: absolute;
+  margin: auto 0;
+  top: 0;
+  bottom: 0;
+  right: 6px;
+  cursor: pointer;
+`;
+
 export default function Chat() {
   const [visible, setVisible] = useState(false);
   const [emojiVisible, setEmojiVisible] = useState(false);
@@ -263,7 +276,7 @@ export default function Chat() {
       const copy = current.slice();
       copy.push({
         id: getNextId(),
-        text: text,
+        text: encode(text).replace(/(?:\r\n|\r|\n)/g, '<br />'),
         time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
         my: true,
       });
@@ -294,7 +307,7 @@ export default function Chat() {
             </MobileClose>
             <ChatBody>
               <ChatDesc>
-                <ChatTitle>Здравствуйте</ChatTitle>
+                <ChatTitle>Здравствуйте &#128075;</ChatTitle>
                 <ChatText>
                   Сотрудники службы поддержки mos.ru ответят на вопросы о работе портала, окажут помощь в получении
                   госуслуг и поиске информации
@@ -304,7 +317,7 @@ export default function Chat() {
                   <ChatRubrica>Вопросы по Личному кабинету</ChatRubrica>
                   <ChatRubrica>Молочная кухня</ChatRubrica>
                   <ChatRubrica>Карта Москвича</ChatRubrica>
-                  <ChatRubrica>Найти ответ в базе знаний</ChatRubrica>
+                  <ChatRubrica>&#128270; Найти ответ в базе знаний</ChatRubrica>
                 </ChatRubrics>
               </ChatDesc>
               <ChatTime>Несколько часов назад</ChatTime>
@@ -312,12 +325,12 @@ export default function Chat() {
                 <React.Fragment key={message.id}>
                   {message.my ? (
                     <ChatTo>
-                      {message.text}
+                      <div dangerouslySetInnerHTML={{ __html: message.text }}></div>
                       <Time>{message.time}</Time>
                     </ChatTo>
                   ) : (
                     <ChatFrom>
-                      {message.text}
+                      <div dangerouslySetInnerHTML={{ __html: message.text }}></div>
                       <Time>{message.time}</Time>
                     </ChatFrom>
                   )}
@@ -327,7 +340,18 @@ export default function Chat() {
             <ChatFooter>
               {emojiVisible && (
                 <EmojiWrap>
-                  <Picker onEmojiClick={onEmojiClick} />
+                  <Emoji code="&#128522;" />
+                  <Emoji code="&#128514;" />
+                  <Emoji code="&#128536;" />
+                  <Emoji code="&#128526;" />
+                  <Emoji code="&#128561;" />
+                  <Emoji code="&#128528;" />
+                  <Emoji code="&#128545;" />
+                  <Emoji code="&#128546;" />
+                  <Emoji code="&#128075;" />
+                  <Emoji code="&#128077;" />
+                  <Emoji code="&#128078;" />
+                  <Emoji code="&#128151;" />
                 </EmojiWrap>
               )}
               <SmileButton onClick={() => setEmojiVisible((emojiVisible) => !emojiVisible)} />
@@ -339,7 +363,7 @@ export default function Chat() {
                 onChange={(ev) => setText(ev.currentTarget.value)}
                 placeholder="Введите сообщение..."
               />
-              {text.length > 0 && <span onClick={send}>&gt;</span>}
+              {text.length > 0 && <SendButton onClick={send} />}
             </ChatFooter>
           </ChatDialog>
         )}
@@ -355,10 +379,16 @@ const EmojiWrap = styled.div`
   bottom: calc(100% + 6px);
   left: 0;
   background: #fff;
-  width: 40%;
-  height: 100px;
+  width: 50%;
+  height: 120px;
   box-shadow: 0px 0px 1px 1px #d6dade;
   border-radius: 2px;
+  display: grid;
+  grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
 `;
 const MobileClose = styled.button`
   background: rgba(51, 51, 51, 0.4);
