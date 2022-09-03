@@ -6,6 +6,6 @@ const EmojiItem = styled.span`
   cursor: pointer;
 `;
 
-export default function Emoji({ code }: { code: string }) {
-  return <EmojiItem>{code}</EmojiItem>;
+export default function Emoji({ onClick, code }: { onClick: () => void; code: string }) {
+  return <EmojiItem onClick={onClick} dangerouslySetInnerHTML={{ __html: code }}></EmojiItem>;
 }

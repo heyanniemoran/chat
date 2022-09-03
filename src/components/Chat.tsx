@@ -108,6 +108,7 @@ const ChatTextarea = styled(TextareaAutosize)`
   width: 100%;
   padding: 10px 38px;
   cursor: text;
+  word-break: break-word;
   &::-webkit-scrollbar {
     width: 0;
   }
@@ -237,6 +238,8 @@ export default function Chat() {
   const [emojiVisible, setEmojiVisible] = useState(false);
   const [chosenEmoji, setChosenEmoji] = useState(null);
 
+  const emojiCodes: string[] = ['😊', '😂', '😘', '😎', '😱', '😐', '😡', '😢', '👋', '👍', '👎', '💗'];
+
   interface Message {
     id: number;
     text: string;
@@ -340,18 +343,9 @@ export default function Chat() {
             <ChatFooter>
               {emojiVisible && (
                 <EmojiWrap>
-                  <Emoji code="&#128522;" />
-                  <Emoji code="&#128514;" />
-                  <Emoji code="&#128536;" />
-                  <Emoji code="&#128526;" />
-                  <Emoji code="&#128561;" />
-                  <Emoji code="&#128528;" />
-                  <Emoji code="&#128545;" />
-                  <Emoji code="&#128546;" />
-                  <Emoji code="&#128075;" />
-                  <Emoji code="&#128077;" />
-                  <Emoji code="&#128078;" />
-                  <Emoji code="&#128151;" />
+                  {emojiCodes.map((code) => (
+                    <Emoji onClick={() => setText((text) => text + code)} code={code} />
+                  ))}
                 </EmojiWrap>
               )}
               <SmileButton onClick={() => setEmojiVisible((emojiVisible) => !emojiVisible)} />
