@@ -1,12 +1,13 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { encode } from 'html-entities';
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 import '@fontsource/pt-sans';
 import { ReactComponent as Close } from '../assets/close.svg';
 import { ReactComponent as Smile } from '../assets/smile.svg';
 import { ReactComponent as Send } from '../assets/send.svg';
 import TextareaAutosize from 'react-textarea-autosize';
 import Emoji from './Emoji';
+import { Transition } from 'react-transition-group';
 
 const show = keyframes`
   from {
@@ -35,10 +36,13 @@ const ChatWrapper = styled.div`
     right: unset;
     bottom: unset;
   }
+  * {
+    box-sizing: border-box;
+  }
 `;
 const ToggleButton = styled.button`
   border-radius: 100%;
-  background-color: #0848c0;
+  background-color: ${(props) => props.theme.link};
   width: 58px;
   height: 58px;
   border: none;
@@ -60,13 +64,13 @@ const ToggleButton = styled.button`
 const ChatDialog = styled.div`
   max-width: 410px;
   min-width: 390px;
-  background: #ffffff;
+  background: ${(props) => props.theme.bg};
   box-shadow: 0px 8px 16px rgba(51, 51, 51, 0.2);
   border-radius: 4px;
   width: 100%;
   max-height: 750px;
   min-height: 10vh;
-  border-top: 5px solid #0848c0;
+  border-top: 5px solid ${(props) => props.theme.link};
   padding: 16px;
   z-index: 99;
   @media (max-width: 410px) {
@@ -85,14 +89,14 @@ const ChatDialog = styled.div`
 `;
 const ChatDesc = styled.div``;
 const ChatTitle = styled.h2`
-  color: #333333;
+  color: ${(props) => props.theme.title};
   font-style: normal;
   font-weight: 700;
   font-size: 28px;
   line-height: 37px;
 `;
 const ChatText = styled.p`
-  color: #0c1014;
+  color: ${(props) => props.theme.fg};
   font-style: normal;
   font-weight: 400;
   font-size: 16px;
@@ -100,15 +104,23 @@ const ChatText = styled.p`
   margin-top: 8px;
 `;
 const ChatTextarea = styled(TextareaAutosize)`
+  font-family: Roboto;
   font-size: 14px;
   line-height: 1.4;
-  background: #ffffff;
-  box-shadow: 0px 0px 1px 1px #d6dade;
+  background: ${(props) => props.theme.bg};
+  box-shadow: 0px 0px 1px 1px ${(props) => props.theme.shadow};
   border-radius: 2px;
   width: 100%;
   padding: 10px 38px;
   cursor: text;
   word-break: break-word;
+  resize: none;
+  border: none;
+  color: ${(props) => props.theme.fg};
+  &:focus {
+    border: none;
+    outline: none;
+  }
   &::-webkit-scrollbar {
     width: 0;
   }
@@ -127,11 +139,11 @@ const ChatRubrics = styled.div`
   margin-top: 8px;
 `;
 const ChatRubrica = styled.button`
-  background: #ffffff;
+  background: ${(props) => props.theme.rubrica};
   border: 1px solid #dee3e9;
   box-shadow: 0px 2px 4px rgba(44, 48, 52, 0.15);
   border-radius: 8px;
-  color: #0848c0;
+  color: ${(props) => props.theme.rubricalink};
   font-size: 13px;
   line-height: 15px;
   text-align: center;
@@ -154,7 +166,7 @@ const ChatBody = styled.div`
     background: transparent;
   }
   &::-webkit-scrollbar-thumb {
-    background-color: #d6dade;
+    background-color: ${(props) => props.theme.shadow};
     border-radius: 20px;
     border-left: 6px solid transparent;
   }
@@ -180,12 +192,12 @@ const ChatTime = styled.span`
   font-size: 13px;
   line-height: 17px;
   text-align: center;
-  color: #9ea4ac;
+  color: ${(props) => props.theme.time};
   padding: 29px 0 10px;
   display: block;
 `;
-const ChatFrom = styled.div`
-  background: #f3f5f7;
+
+const ChatMessage = css`
   padding: 9px 14px;
   font-style: normal;
   font-weight: 400;
@@ -195,22 +207,28 @@ const ChatFrom = styled.div`
   border-radius: 8px;
   max-width: 80%;
   margin-top: 16px;
-  margin-right: auto;
   display: inline-block;
+  transition: opacity 1s;
+  opacity: 0;
+  &.entering,
+  &.entered {
+    opacity: 1;
+  }
+  a {
+    color: ${(props) => props.theme.link};
+    text-decoration: underline;
+    cursor: pointer;
+  }
+`;
+const ChatFrom = styled.div`
+  background: #f3f5f7;
+  margin-right: auto;
+  ${ChatMessage}
 `;
 const ChatTo = styled.div`
   background: #deecfd;
-  padding: 9px 14px;
-  font-style: normal;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 20px;
-  color: #000000;
-  border-radius: 8px;
-  max-width: 80%;
-  margin-top: 16px;
   margin-left: auto;
-  display: inline-block;
+  ${ChatMessage}
 `;
 const Time = styled.span`
   bottom: 8px;
@@ -219,7 +237,7 @@ const Time = styled.span`
   font-weight: 400;
   font-size: 12px;
   line-height: 15px;
-  color: #9ea4ac;
+  color: ${(props) => props.theme.time};
   text-align: right;
   display: block;
 `;
@@ -232,6 +250,47 @@ const SendButton = styled(Send)`
   right: 6px;
   cursor: pointer;
 `;
+const EmojiWrap = styled.div`
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: ${(props) => props.theme.bg};
+  width: 50%;
+  height: 120px;
+  box-shadow: 0px 0px 1px 1px ${(props) => props.theme.shadow};
+  border-radius: 2px;
+  display: grid;
+  grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+`;
+const MobileClose = styled.button`
+  background: rgba(51, 51, 51, 0.4);
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  top: 9px;
+  right: 9px;
+  width: 40px;
+  height: 40px;
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  @media (min-width: 410px) {
+    display: none;
+  }
+`;
+
+const urlRegex =
+  /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)/g;
+
+function processText(text: string): string {
+  return encode(text)
+    .replace(/(?:\r\n|\r|\n)/g, '<br />')
+    .replace(urlRegex, '<a href="$&" target="_blank" rel="nofollow">$&</a>');
+}
 
 export default function Chat() {
   const [visible, setVisible] = useState(false);
@@ -279,7 +338,7 @@ export default function Chat() {
       const copy = current.slice();
       copy.push({
         id: getNextId(),
-        text: encode(text).replace(/(?:\r\n|\r|\n)/g, '<br />'),
+        text: text,
         time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
         my: true,
       });
@@ -297,9 +356,31 @@ export default function Chat() {
     [send],
   );
 
-  const onEmojiClick = () => {
-    setEmojiVisible((visiemojiVisibleble) => !emojiVisible);
+  const scrollToEl = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (scrollToEl.current != null) scrollToEl.current.scrollIntoView();
+  }, [messages]);
+
+  const emojiContainerEl = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    function handler(ev: MouseEvent) {
+      if (emojiContainerEl.current != null) {
+        if (ev.target instanceof HTMLElement) {
+          if (!emojiContainerEl.current.contains(ev.target)) {
+            setEmojiVisible(false);
+          }
+        }
+      }
+    }
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
+
+  const onEmojiClick = (code: string) => {
+    setText((text) => text + code);
+    setEmojiVisible(false);
   };
+
   return (
     <>
       <ChatWrapper>
@@ -326,25 +407,30 @@ export default function Chat() {
               <ChatTime>Несколько часов назад</ChatTime>
               {messages.map((message) => (
                 <React.Fragment key={message.id}>
-                  {message.my ? (
-                    <ChatTo>
-                      <div dangerouslySetInnerHTML={{ __html: message.text }}></div>
-                      <Time>{message.time}</Time>
-                    </ChatTo>
-                  ) : (
-                    <ChatFrom>
-                      <div dangerouslySetInnerHTML={{ __html: message.text }}></div>
-                      <Time>{message.time}</Time>
-                    </ChatFrom>
-                  )}
+                  <Transition appear={true} in={true} timeout={1000}>
+                    {(state) =>
+                      message.my ? (
+                        <ChatTo className={state}>
+                          <div dangerouslySetInnerHTML={{ __html: processText(message.text) }}></div>
+                          <Time>{message.time}</Time>
+                        </ChatTo>
+                      ) : (
+                        <ChatFrom className={state}>
+                          <div dangerouslySetInnerHTML={{ __html: processText(message.text) }}></div>
+                          <Time>{message.time}</Time>
+                        </ChatFrom>
+                      )
+                    }
+                  </Transition>
                 </React.Fragment>
               ))}
+              <div ref={scrollToEl}></div>
             </ChatBody>
             <ChatFooter>
               {emojiVisible && (
-                <EmojiWrap>
+                <EmojiWrap ref={emojiContainerEl}>
                   {emojiCodes.map((code) => (
-                    <Emoji onClick={() => setText((text) => text + code)} code={code} />
+                    <Emoji onClick={() => onEmojiClick(code)} code={code} />
                   ))}
                 </EmojiWrap>
               )}
@@ -368,35 +454,3 @@ export default function Chat() {
     </>
   );
 }
-const EmojiWrap = styled.div`
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0;
-  background: #fff;
-  width: 50%;
-  height: 120px;
-  box-shadow: 0px 0px 1px 1px #d6dade;
-  border-radius: 2px;
-  display: grid;
-  grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr 1fr;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-`;
-const MobileClose = styled.button`
-  background: rgba(51, 51, 51, 0.4);
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08);
-  border-radius: 20px;
-  top: 9px;
-  right: 9px;
-  width: 40px;
-  height: 40px;
-  position: fixed;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  @media (min-width: 410px) {
-    display: none;
-  }
-`;
