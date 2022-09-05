@@ -8,6 +8,7 @@ import { ReactComponent as Send } from '../assets/send.svg';
 import TextareaAutosize from 'react-textarea-autosize';
 import Emoji from './Emoji';
 import { Transition } from 'react-transition-group';
+import Animate from './Animate';
 
 const show = keyframes`
   from {
@@ -29,13 +30,17 @@ const ChatWrapper = styled.div`
   flex-flow: column;
   align-items: flex-end;
   animation: ${show} 1s linear;
-  @media (max-width: 410px) {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    right: unset;
-    bottom: unset;
+  &.visible {
+    @media (max-width: 410px) {
+      position: fixed;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      right: unset;
+      bottom: unset;
+    }
   }
+
   * {
     box-sizing: border-box;
   }
@@ -53,12 +58,18 @@ const ToggleButton = styled.button`
   align-items: center;
   justify-content: center;
   position: relative;
-  &:before {
-    content: '';
-    width: 58px;
-    height: 58px;
-    left: 0;
-    top: 0;
+`;
+
+const StyledClose = styled(Close)`
+  width: 15px;
+  height: 15px;
+  transform: rotate(0deg) scale(0.33);
+  transition: transform 0.5s, opacity 0.5s;
+  opacity: 0;
+  &.entered,
+  &.entering {
+    transform: rotate(-180deg) scale(1);
+    opacity: 1;
   }
 `;
 const ChatDialog = styled.div`
@@ -270,6 +281,7 @@ const MobileClose = styled.button`
   background: rgba(51, 51, 51, 0.4);
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08);
   border-radius: 20px;
+  border: none;
   top: 9px;
   right: 9px;
   width: 40px;
@@ -358,7 +370,7 @@ export default function Chat() {
 
   const scrollToEl = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
-    if (scrollToEl.current != null) scrollToEl.current.scrollIntoView();
+    if (scrollToEl.current != null) scrollToEl.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [messages]);
 
   const emojiContainerEl = useRef<HTMLDivElement>(null);
@@ -383,7 +395,7 @@ export default function Chat() {
 
   return (
     <>
-      <ChatWrapper>
+      <ChatWrapper className={visible ? 'visible' : ''}>
         {visible && (
           <ChatDialog>
             <MobileClose onClick={() => setVisible((visible) => !visible)}>
@@ -391,7 +403,7 @@ export default function Chat() {
             </MobileClose>
             <ChatBody>
               <ChatDesc>
-                <ChatTitle>Здравствуйте &#128075;</ChatTitle>
+                <ChatTitle>Здравствуйте 👋</ChatTitle>
                 <ChatText>
                   Сотрудники службы поддержки mos.ru ответят на вопросы о работе портала, окажут помощь в получении
                   госуслуг и поиске информации
@@ -401,14 +413,14 @@ export default function Chat() {
                   <ChatRubrica>Вопросы по Личному кабинету</ChatRubrica>
                   <ChatRubrica>Молочная кухня</ChatRubrica>
                   <ChatRubrica>Карта Москвича</ChatRubrica>
-                  <ChatRubrica>&#128270; Найти ответ в базе знаний</ChatRubrica>
+                  <ChatRubrica>🔎 Найти ответ в базе знаний</ChatRubrica>
                 </ChatRubrics>
               </ChatDesc>
               <ChatTime>Несколько часов назад</ChatTime>
               {messages.map((message) => (
                 <React.Fragment key={message.id}>
                   <Transition appear={true} in={true} timeout={1000}>
-                    {(state) =>
+                    {(state: string) =>
                       message.my ? (
                         <ChatTo className={state}>
                           <div dangerouslySetInnerHTML={{ __html: processText(message.text) }}></div>
@@ -448,7 +460,10 @@ export default function Chat() {
           </ChatDialog>
         )}
         <ToggleButton onClick={() => setVisible((visible) => !visible)}>
-          {visible ? <Close /> : <div></div>}
+          <Transition in={visible} mountOnEnter unmountOnExit timeout={500}>
+            {(state) => <StyledClose className={state} />}
+          </Transition>
+          {!visible && <Animate />}
         </ToggleButton>
       </ChatWrapper>
     </>
