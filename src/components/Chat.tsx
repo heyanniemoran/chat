@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { encode } from 'html-entities';
 import styled, { keyframes, css } from 'styled-components';
 import '@fontsource/pt-sans';
@@ -47,11 +47,11 @@ const ChatWrapper = styled.div`
 `;
 const ToggleButton = styled.button`
   border-radius: 100%;
-  background-color: ${(props) => props.theme.link};
+  background-color: ${({ theme }) => theme.link};
   width: 58px;
   height: 58px;
   border: none;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   margin-top: 21px;
   display: flex;
@@ -75,13 +75,13 @@ const StyledClose = styled(Close)`
 const ChatDialog = styled.div`
   max-width: 410px;
   min-width: 390px;
-  background: ${(props) => props.theme.bg};
-  box-shadow: 0px 8px 16px rgba(51, 51, 51, 0.2);
+  background: ${({ theme }) => theme.bg};
+  box-shadow: 0 8px 16px rgba(51, 51, 51, 0.2);
   border-radius: 4px;
   width: 100%;
   max-height: 750px;
   min-height: 10vh;
-  border-top: 5px solid ${(props) => props.theme.link};
+  border-top: 5px solid ${({ theme }) => theme.link};
   padding: 16px;
   z-index: 99;
   @media (max-width: 410px) {
@@ -100,14 +100,14 @@ const ChatDialog = styled.div`
 `;
 const ChatDesc = styled.div``;
 const ChatTitle = styled.h2`
-  color: ${(props) => props.theme.title};
+  color: ${({ theme }) => theme.title};
   font-style: normal;
   font-weight: 700;
   font-size: 28px;
   line-height: 37px;
 `;
 const ChatText = styled.p`
-  color: ${(props) => props.theme.fg};
+  color: ${({ theme }) => theme.fg};
   font-style: normal;
   font-weight: 400;
   font-size: 16px;
@@ -118,16 +118,14 @@ const ChatTextarea = styled(TextareaAutosize)`
   font-family: Roboto;
   font-size: 14px;
   line-height: 1.4;
-  background: ${(props) => props.theme.bg};
-  box-shadow: 0px 0px 1px 1px ${(props) => props.theme.shadow};
   border-radius: 2px;
   width: 100%;
-  padding: 10px 38px;
+  padding: 10px;
   cursor: text;
   word-break: break-word;
   resize: none;
   border: none;
-  color: ${(props) => props.theme.fg};
+  color: ${({ theme }) => theme.fg};
   &:focus {
     border: none;
     outline: none;
@@ -150,11 +148,11 @@ const ChatRubrics = styled.div`
   margin-top: 8px;
 `;
 const ChatRubrica = styled.button`
-  background: ${(props) => props.theme.rubrica};
+  background: ${({ theme }) => theme.rubrica};
   border: 1px solid #dee3e9;
-  box-shadow: 0px 2px 4px rgba(44, 48, 52, 0.15);
+  box-shadow: 0 2px 4px rgba(44, 48, 52, 0.15);
   border-radius: 8px;
-  color: ${(props) => props.theme.rubricalink};
+  color: ${({ theme }) => theme.rubricalink};
   font-size: 13px;
   line-height: 15px;
   text-align: center;
@@ -170,14 +168,17 @@ const ChatBody = styled.div`
   height: 410px;
   display: flex;
   flex-direction: column;
+  padding-right: 6px;
+  margin-right: -12px;
   &::-webkit-scrollbar {
     width: 8px;
+    padding-left: 8px;
   }
   &::-webkit-scrollbar-track {
     background: transparent;
   }
   &::-webkit-scrollbar-thumb {
-    background-color: ${(props) => props.theme.shadow};
+    background-color: ${({ theme }) => theme.shadow};
     border-radius: 20px;
     border-left: 6px solid transparent;
   }
@@ -188,11 +189,12 @@ const ChatBody = styled.div`
 const ChatFooter = styled.div`
   margin-top: 6px;
   position: relative;
+  display: flex;
+  background: ${({ theme }) => theme.bg};
+  box-shadow: 0 0 1px 1px ${({ theme }) => theme.shadow};
 `;
 const SmileButton = styled(Smile)`
-  position: absolute;
-  top: 10px;
-  left: 10px;
+  margin: 10px 0 0 10px;
   z-index: 9;
   cursor: pointer;
 `;
@@ -203,7 +205,7 @@ const ChatTime = styled.span`
   font-size: 13px;
   line-height: 17px;
   text-align: center;
-  color: ${(props) => props.theme.time};
+  color: ${({ theme }) => theme.time};
   padding: 29px 0 10px;
   display: block;
 `;
@@ -226,7 +228,7 @@ const ChatMessage = css`
     opacity: 1;
   }
   a {
-    color: ${(props) => props.theme.link};
+    color: ${({ theme }) => theme.link};
     text-decoration: underline;
     cursor: pointer;
   }
@@ -248,38 +250,32 @@ const Time = styled.span`
   font-weight: 400;
   font-size: 12px;
   line-height: 15px;
-  color: ${(props) => props.theme.time};
+  color: ${({ theme }) => theme.time};
   text-align: right;
   display: block;
 `;
 
 const SendButton = styled(Send)`
-  position: absolute;
-  margin: auto 0;
-  top: 0;
-  bottom: 0;
-  right: 6px;
+  margin: 10px 6px 0 0;
   cursor: pointer;
 `;
 const EmojiWrap = styled.div`
   position: absolute;
   bottom: calc(100% + 6px);
   left: 0;
-  background: ${(props) => props.theme.bg};
+  background: ${({ theme }) => theme.bg};
   width: 50%;
   height: 120px;
-  box-shadow: 0px 0px 1px 1px ${(props) => props.theme.shadow};
+  box-shadow: 0 0 1px 1px ${({ theme }) => theme.shadow};
   border-radius: 2px;
   display: grid;
   grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr 1fr;
   gap: 8px;
-  align-items: center;
-  justify-content: center;
   padding: 12px;
 `;
 const MobileClose = styled.button`
   background: rgba(51, 51, 51, 0.4);
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
   border-radius: 20px;
   border: none;
   top: 9px;
@@ -307,7 +303,6 @@ function processText(text: string): string {
 export default function Chat() {
   const [visible, setVisible] = useState(false);
   const [emojiVisible, setEmojiVisible] = useState(false);
-  const [chosenEmoji, setChosenEmoji] = useState(null);
 
   const emojiCodes: string[] = ['😊', '😂', '😘', '😎', '😱', '😐', '😡', '😢', '👋', '👍', '👎', '💗'];
 
@@ -338,10 +333,6 @@ export default function Chat() {
   });
 
   const [nextId, setNextId] = useState(100);
-  const getNextId = useCallback(() => {
-    setNextId((current) => current + 1);
-    return nextId;
-  }, [nextId]);
 
   const [text, setText] = useState('');
   const send = useCallback(() => {
@@ -349,18 +340,21 @@ export default function Chat() {
     setMessages((current) => {
       const copy = current.slice();
       copy.push({
-        id: getNextId(),
+        id: nextId,
         text: text,
         time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
         my: true,
       });
+      setNextId(nextId + 1);
       return copy;
     });
     setText('');
-  }, [text]);
+  }, [text, nextId]);
   const handleKeyPress = useCallback(
     (ev: React.KeyboardEvent) => {
-      if (ev.ctrlKey && ev.code === 'Enter') {
+      const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+      const isMod = isMac ? ev.metaKey : ev.ctrlKey;
+      if (isMod && ev.code === 'Enter') {
         ev.preventDefault();
         send();
       }
@@ -388,8 +382,17 @@ export default function Chat() {
     return () => document.removeEventListener('click', handler);
   }, []);
 
+  const textEl = useRef<HTMLTextAreaElement>(null);
   const onEmojiClick = (code: string) => {
-    setText((text) => text + code);
+    const el = textEl.current;
+    if (el != null) {
+      const cursor: number = el.selectionStart;
+      setText((text) => text.slice(0, cursor) + code + text.slice(cursor));
+      const newCursor = cursor + code.length;
+      setTimeout(() => el.setSelectionRange(newCursor, newCursor), 10);
+    } else {
+      setText((text) => text + code);
+    }
     setEmojiVisible(false);
   };
 
@@ -436,18 +439,19 @@ export default function Chat() {
                   </Transition>
                 </React.Fragment>
               ))}
-              <div ref={scrollToEl}></div>
+              <div ref={scrollToEl} />
             </ChatBody>
             <ChatFooter>
               {emojiVisible && (
                 <EmojiWrap ref={emojiContainerEl}>
                   {emojiCodes.map((code) => (
-                    <Emoji onClick={() => onEmojiClick(code)} code={code} />
+                    <Emoji key={code} onClick={() => onEmojiClick(code)} code={code} />
                   ))}
                 </EmojiWrap>
               )}
               <SmileButton onClick={() => setEmojiVisible((emojiVisible) => !emojiVisible)} />
               <ChatTextarea
+                ref={textEl}
                 value={text}
                 maxRows={3}
                 minRows={1}
